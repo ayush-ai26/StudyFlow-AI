@@ -49,5 +49,12 @@ StudyFlow AI is a premium React Native + Expo mobile productivity app for studen
 - Guest: `/api/auth/guest` creates anonymous user + session.
 - Tokens sent as `Authorization: Bearer <token>`.
 
-## Smart Business Enhancement
-- **AI Plan generator** turns one-line goals into a structured 7-day study plan auto-added to the planner — driving daily app re-engagement and word-of-mouth among study peers (high virality lever for student utility apps).
+## Backend Architecture (post-refactor)
+- `server.py` — minimal FastAPI bootstrap (~58 lines)
+- `deps.py` — shared Mongo client, Pydantic models with bounds (`conint(ge=0, le=100)` for prep progress, `conint(ge=1, le=240)` for pomodoro duration), `require_user` FastAPI dependency
+- `routers/auth.py`, `tasks.py`, `notes.py`, `pomodoro.py`, `prep.py`, `analytics.py`, `ai.py` — one router per domain
+
+## Recent additions
+- **Local notifications** (Expo Notifications, mobile only): scheduled at 9 AM on a task's due date when created with a `due_date`. Pomodoro start schedules a "Focus session done" reminder. Profile reminders toggle requests OS permission.
+- **Swipe-to-delete** on planner tasks via `react-native-gesture-handler` `Swipeable` (with trash-icon fallback for accessibility & web).
+- **Share Plan** button in AI Plan modal — uses native `Share.share` to export the AI-generated study plan as plain text to any installed app (Messages/Mail/WhatsApp), driving virality.
