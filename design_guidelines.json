@@ -1,0 +1,127 @@
+{
+  "project_name": "StudyFlow AI",
+  "app_type": "React Native Expo",
+  "theme_strategy": "Dark and Light Mode. Default to Dark. OLED black (#000000) background for dark mode to save battery and look premium (Linear/Notion inspired).",
+  "archetype": "4 (Swiss & High-Contrast) adapted for Productivity",
+  "colors": {
+    "light": {
+      "background": "#FAFAFA",
+      "surface": "#FFFFFF",
+      "surface_elevated": "#F5F5F5",
+      "primary": "#E54D2E",
+      "primary_text": "#FFFFFF",
+      "text_main": "#111111",
+      "text_muted": "#666666",
+      "border": "#EAEAEA",
+      "success": "#2E904F",
+      "warning": "#F5A623",
+      "error": "#D33D3D"
+    },
+    "dark": {
+      "background": "#000000",
+      "surface": "#121212",
+      "surface_elevated": "#1E1E1E",
+      "primary": "#E54D2E",
+      "primary_text": "#FFFFFF",
+      "text_main": "#EEEEEE",
+      "text_muted": "#A0A0A0",
+      "border": "#2D2D2D",
+      "success": "#4CAF50",
+      "warning": "#FFB74D",
+      "error": "#E57373"
+    }
+  },
+  "typography": {
+    "heading_font": "Outfit",
+    "body_font": "Manrope",
+    "implementation": "Use @expo-google-fonts/outfit and @expo-google-fonts/manrope",
+    "scales": {
+      "h1": "32px, bold, tight tracking",
+      "h2": "24px, semibold, tight tracking",
+      "h3": "20px, medium",
+      "body": "16px, regular, relaxed line height",
+      "caption": "12px, medium, uppercase, wider tracking"
+    }
+  },
+  "spacing": {
+    "screen_padding": 20,
+    "card_padding": 16,
+    "item_gap": 12,
+    "section_gap": 32,
+    "border_radius": {
+      "sm": 8,
+      "md": 16,
+      "lg": 24,
+      "pill": 9999
+    }
+  },
+  "components_guidelines": {
+    "cards": "Cardless/Linear style: Flat backgrounds. Light mode uses #FFFFFF with 1px #EAEAEA border. Dark mode uses #121212 with 1px #2D2D2D border. No box-shadows. Internal padding 16px.",
+    "buttons": "Primary buttons: Pill shape (rounded-full), solid #E54D2E background, white text. Secondary buttons: 1px border, transparent background. Active opacity 0.8.",
+    "inputs": "Flat surfaces, no visible borders until focus. Focus state triggers 1px border of primary color.",
+    "bottom_nav": "Frosted glass style if possible, otherwise solid background with top border. Active icon uses primary color, inactive uses muted text color.",
+    "pomodoro_timer": "Large central fluid typography countdown. Circular progress ring using SVG. Play/Pause rounded buttons below."
+  },
+  "screens_layout": {
+    "splash": {
+      "description": "Centered logo and 'StudyFlow AI' text. Clean, minimalist fade transition.",
+      "elements": ["Logo Image/Icon", "App Title (H1)", "Subtle loading indicator"]
+    },
+    "login": {
+      "description": "Full-screen background image with a dark gradient overlay at the bottom. Clean authentication options.",
+      "elements": ["Background Image", "Google Sign-in Button (White/Dark based on theme)", "Guest Mode text link (underline)", "Terms/Privacy caption"]
+    },
+    "home": {
+      "description": "Dashboard overview providing immediate value and focus.",
+      "elements": ["Greeting + Date", "Quick Stats Row (2 columns: Hours Studied, Tasks Left)", "Focus Card (Launch Pomodoro)", "Up Next List (Horizontal scroll of upcoming classes/exams)"]
+    },
+    "planner": {
+      "description": "Daily task and assignment management.",
+      "elements": ["Horizontal Date Picker (Week view strip)", "Tasks List (Checkbox, Title, Tag)", "Add Task FAB (Floating Action Button)"]
+    },
+    "analytics": {
+      "description": "Progress tracking and exam prep metrics.",
+      "elements": ["Weekly Study Hours Chart (Bar chart)", "Current Streak (Flame icon + number)", "SAT/IELTS Prep Progress (Circular rings)"]
+    },
+    "calendar": {
+      "description": "Monthly overview of exams, assignments, and tasks.",
+      "elements": ["Month Grid View", "Agenda List below selected date"]
+    },
+    "chatbot": {
+      "description": "AI Study Assistant chat interface.",
+      "elements": ["Chat History Area", "Suggested Prompts Horizontal Scroll", "Message Input Box + Send Icon"]
+    },
+    "profile": {
+      "description": "User settings and app preferences.",
+      "elements": ["User Avatar + Name", "Theme Toggle (Light/Dark/System)", "Notifications Toggle", "Logout Button"]
+    }
+  },
+  "image_urls": [
+    {
+      "category": "login_background",
+      "url": "https://images.pexels.com/photos/8004117/pexels-photo-8004117.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=1536&w=1024",
+      "description": "Minimalist white workspace, clean aesthetic study setup for login background"
+    },
+    {
+      "category": "empty_state_abstract",
+      "url": "https://images.pexels.com/photos/30812805/pexels-photo-30812805.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=1024&w=1024",
+      "description": "Clean desk setup to use sparingly as card backgrounds or empty states"
+    }
+  ],
+  "instructions_to_main_agent": [
+    "Create .js files, NOT .tsx files.",
+    "Use React Native components (View, Text, TouchableOpacity, ScrollView, StyleSheet).",
+    "Use React Navigation (@react-navigation/native, @react-navigation/bottom-tabs, @react-navigation/native-stack) for routing.",
+    "Implement the theme toggling logic using a Context provider (React.createContext).",
+    "Ensure all interactive elements have a 'data-testid' attribute in kebab-case based on their role.",
+    "Avoid using Shadows to simulate depth; rely on background color contrasts and 1px borders (Linear/Notion design pattern).",
+    "Use Lucide-React-Native for all icons.",
+    "Ensure at least 44pt height for all touchable elements to meet accessibility standards."
+  ],
+  "data_testid_conventions": {
+    "buttons": "kebab-case-submit-button",
+    "inputs": "kebab-case-input",
+    "nav_items": "kebab-case-tab",
+    "cards": "kebab-case-card"
+  }
+}
