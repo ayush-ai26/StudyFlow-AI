@@ -1,10 +1,31 @@
-import * as Notifications from 'expo-notifications';
+/**
+ * Notifications helpers — safe to import in Expo Go.
+ *
+ * Note: expo-notifications removed remote push support from Expo Go in SDK 53.
+ * Even local notifications throw at import time in Go. We lazy-require the
+ * module and short-circuit when running in Expo Go or on web.
+ */
 import { Platform } from 'react-native';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 
+const IS_EXPO_GO = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+const SUPPORTED = Platform.OS !== 'web' && !IS_EXPO_GO;
+
+let modPromise: Promise<any> | null = null;
 let configured = false;
+
+async function getModule() {
+  if (!SUPPORTED) return null;
+  if (!modPromise) {
+    modPromise = import('expo-notifications').catch(() => null);
+  }
+  return modPromise;
+}
 
 async function configure() {
   if (configured) return;
+  const Notifications = await getModule();
+  if (!Notifications) return;
   configured = true;
 
   Notifications.setNotificationHandler({
@@ -17,71 +38,73 @@ async function configure() {
   });
 
   if (Platform.OS === 'android') {
-    await Notifications.setNotificationChannelAsync('default', {
-      name: 'StudyFlow Reminders',
-      importance: Notifications.AndroidImportance.DEFAULT,
-      sound: 'default',
-    });
+    try {
+      await Notifications.setNotificationChannelAsync('default', {
+        name: 'StudyFlow Reminders',
+        importance: Notifications.AndroidImportance.DEFAULT,
+        sound: 'default',
+      });
+    } catch {}
   }
 }
 
 export async function requestPermissions(): Promise<boolean> {
-  if (Platform.OS === 'web') return false;
+  const Notifications = await getModule();
+  if (!Notifications) return false;
   await configure();
-  const settings = await Notifications.getPermissionsAsync();
-  if (settings.granted) return true;
-  const req = await Notifications.requestPermissionsAsync();
-  return !!req.granted;
+  try {
+    const settings = await Notifications.getPermissionsAsync();
+    if (settings.granted) return true;
+    const req = await Notifications.requestPermissionsAsync();
+    return !!req.granted;
+  } catch {
+    return false;
+  }
 }
 
-/**
- * Schedule a reminder notification for a given task.
- * If due_date is in the past, returns null (no schedule).
- */
 export async function scheduleTaskReminder(
   taskId: string,
   title: string,
   dueDate: string | null | undefined
 ): Promise<string | null> {
-  if (Platform.OS === 'web' || !dueDate) return null;
+  if (!dueDate) return null;
+  const Notifications = await getModule();
+  if (!Notifications) return null;
   await configure();
 
-  // Schedule at 9 AM on the due date (local time).
   const target = new Date(`${dueDate}T09:00:00`);
-  if (isNaN(target.getTime())) return null;
-  if (target.getTime() <= Date.now()) return null;
+  if (isNaN(target.getTime()) || target.getTime() <= Date.now()) return null;
 
   try {
-    const id = await Notifications.scheduleNotificationAsync({
+    return await Notifications.scheduleNotificationAsync({
       content: {
         title: 'StudyFlow Reminder',
         body: title,
         sound: 'default',
         data: { taskId },
       },
-      trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: target } as any,
+      trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: target },
     });
-    return id;
   } catch {
     return null;
   }
 }
 
 export async function cancelReminder(notificationId: string) {
-  if (Platform.OS === 'web') return;
+  const Notifications = await getModule();
+  if (!Notifications) return;
   try { await Notifications.cancelScheduledNotificationAsync(notificationId); } catch {}
 }
 
-/** Schedule a quick reminder N minutes from now (used for pomodoro). */
 export async function scheduleInMinutes(title: string, body: string, minutes: number): Promise<string | null> {
-  if (Platform.OS === 'web') return null;
+  const Notifications = await getModule();
+  if (!Notifications) return null;
   await configure();
   try {
-    const id = await Notifications.scheduleNotificationAsync({
+    return await Notifications.scheduleNotificationAsync({
       content: { title, body, sound: 'default' },
-      trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: minutes * 60 } as any,
+      trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: minutes * 60 },
     });
-    return id;
   } catch {
     return null;
   }
