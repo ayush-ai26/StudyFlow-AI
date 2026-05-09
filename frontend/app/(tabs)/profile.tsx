@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Switch } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Switch, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { LogOut, Moon, Sun, Bell, BarChart3, FileText, ChevronRight, Sparkles } from 'lucide-react-native';
@@ -8,6 +8,7 @@ import { useAuth } from '../../src/contexts/AuthContext';
 import { Card } from '../../src/components/Card';
 import { Button } from '../../src/components/Button';
 import { spacing, radius } from '../../src/theme/colors';
+import { requestPermissions } from '../../src/lib/notifications';
 
 export default function ProfileScreen() {
   const { theme, mode, setMode } = useTheme();
@@ -86,7 +87,20 @@ export default function ProfileScreen() {
               <Bell size={18} color={theme.textMuted} />
               <Text style={[styles.label, { color: theme.textMain }]}>Study reminders</Text>
             </View>
-            <Switch value={notifEnabled} onValueChange={setNotifEnabled} testID="notif-switch" />
+            <Switch
+              value={notifEnabled}
+              onValueChange={async (v) => {
+                if (v) {
+                  const ok = await requestPermissions();
+                  if (!ok) {
+                    Alert.alert('Permission needed', 'Enable notifications in your device settings to receive study reminders.');
+                    return;
+                  }
+                }
+                setNotifEnabled(v);
+              }}
+              testID="notif-switch"
+            />
           </View>
         </Card>
 

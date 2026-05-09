@@ -1,17 +1,19 @@
 import React, { useCallback, useState } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity, Modal, Alert, ScrollView,
-  KeyboardAvoidingView, Platform,
+  KeyboardAvoidingView, Platform, Share,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from 'expo-router';
-import { Plus, Check, Trash2, X, Sparkles } from 'lucide-react-native';
+import { Swipeable } from 'react-native-gesture-handler';
+import { Plus, Check, Trash2, X, Sparkles, Share2 } from 'lucide-react-native';
 import { useTheme } from '../../src/contexts/ThemeContext';
 import { Card } from '../../src/components/Card';
 import { Button } from '../../src/components/Button';
 import { Input } from '../../src/components/Input';
 import { api } from '../../src/lib/api';
 import { spacing, radius } from '../../src/theme/colors';
+import { requestPermissions, scheduleTaskReminder } from '../../src/lib/notifications';
 
 interface Task {
   id: string; title: string; description?: string; type: 'task' | 'assignment' | 'exam';
@@ -110,32 +112,46 @@ export default function PlannerScreen() {
           ) : null
         }
         renderItem={({ item }) => (
-          <Card style={{ marginBottom: 10 }}>
-            <View style={styles.taskRow}>
+          <Swipeable
+            renderRightActions={() => (
               <TouchableOpacity
-                onPress={() => toggle(item)}
-                activeOpacity={0.8}
-                style={[
-                  styles.checkbox,
-                  { borderColor: item.completed ? theme.primary : theme.border, backgroundColor: item.completed ? theme.primary : 'transparent' },
-                ]}
-                testID={`toggle-${item.id}`}
+                onPress={() => remove(item)}
+                style={[styles.swipeAction, { backgroundColor: theme.error }]}
+                testID={`swipe-delete-${item.id}`}
               >
-                {item.completed ? <Check size={16} color="#FFF" /> : null}
+                <Trash2 size={20} color="#FFF" />
+                <Text style={styles.swipeActionText}>Delete</Text>
               </TouchableOpacity>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.taskTitle, { color: theme.textMain, textDecorationLine: item.completed ? 'line-through' : 'none', opacity: item.completed ? 0.6 : 1 }]}>
-                  {item.title}
-                </Text>
-                <Text style={[styles.taskMeta, { color: theme.textMuted }]}>
-                  {item.type.toUpperCase()}{item.subject ? ` · ${item.subject}` : ''}{item.due_date ? ` · ${item.due_date}` : ''} · {item.priority}
-                </Text>
+            )}
+            overshootRight={false}
+          >
+            <Card style={{ marginBottom: 10 }}>
+              <View style={styles.taskRow}>
+                <TouchableOpacity
+                  onPress={() => toggle(item)}
+                  activeOpacity={0.8}
+                  style={[
+                    styles.checkbox,
+                    { borderColor: item.completed ? theme.primary : theme.border, backgroundColor: item.completed ? theme.primary : 'transparent' },
+                  ]}
+                  testID={`toggle-${item.id}`}
+                >
+                  {item.completed ? <Check size={16} color="#FFF" /> : null}
+                </TouchableOpacity>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.taskTitle, { color: theme.textMain, textDecorationLine: item.completed ? 'line-through' : 'none', opacity: item.completed ? 0.6 : 1 }]}>
+                    {item.title}
+                  </Text>
+                  <Text style={[styles.taskMeta, { color: theme.textMuted }]}>
+                    {item.type.toUpperCase()}{item.subject ? ` · ${item.subject}` : ''}{item.due_date ? ` · ${item.due_date}` : ''} · {item.priority}
+                  </Text>
+                </View>
+                <TouchableOpacity onPress={() => remove(item)} hitSlop={8} testID={`delete-${item.id}`}>
+                  <Trash2 size={18} color={theme.textMuted} />
+                </TouchableOpacity>
               </View>
-              <TouchableOpacity onPress={() => remove(item)} hitSlop={8} testID={`delete-${item.id}`}>
-                <Trash2 size={18} color={theme.textMuted} />
-              </TouchableOpacity>
-            </View>
-          </Card>
+            </Card>
+          </Swipeable>
         )}
       />
 
@@ -178,6 +194,11 @@ const AddTaskModal: React.FC<{ visible: boolean; onClose: () => void; onCreated:
     setSaving(true);
     try {
       const t = await api<Task>('/tasks', { method: 'POST', json: { title, subject, type, priority, due_date: dueDate || null } });
+      // Schedule local notification reminder if there's a future due date
+      if (dueDate) {
+        const ok = await requestPermissions();
+        if (ok) await scheduleTaskReminder(t.id, t.title, dueDate);
+      }
       reset();
       onCreated(t);
     } catch (e: any) {
@@ -321,6 +342,18 @@ const AiPlanModal: React.FC<{ visible: boolean; onClose: () => void; onApply: (t
                   <View style={{ height: 12 }} />
                   <Button title="Add to Planner" onPress={apply} loading={loading} testID="apply-plan-button" />
                   <View style={{ height: 8 }} />
+                  <Button
+                    title="Share Plan"
+                    variant="secondary"
+                    icon={<Share2 size={18} color={theme.textMain} />}
+                    onPress={async () => {
+                      const text = `My StudyFlow AI Plan — ${goal}\n\n` +
+                        plan.map(p => `Day ${p.day}: ${p.title}${p.subject ? ` (${p.subject})` : ''} · ${p.duration_minutes || 60} min${p.focus ? `\n   ${p.focus}` : ''}`).join('\n');
+                      try { await Share.share({ message: text }); } catch {}
+                    }}
+                    testID="share-plan-button"
+                  />
+                  <View style={{ height: 8 }} />
                   <Button title="Generate Different Plan" variant="secondary" onPress={() => setPlan(null)} />
                 </>
               )}
@@ -349,6 +382,11 @@ const styles = StyleSheet.create({
     position: 'absolute', right: 20, bottom: Platform.OS === 'ios' ? 100 : 80,
     width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center',
   },
+  swipeAction: {
+    width: 88, marginBottom: 10, borderRadius: 16, alignItems: 'center', justifyContent: 'center',
+    marginLeft: 8,
+  },
+  swipeActionText: { color: '#FFF', fontSize: 11, fontFamily: 'Manrope_600SemiBold', marginTop: 4 },
   modalOverlay: { flex: 1, justifyContent: 'flex-end' },
   modalSheet: { borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24, borderTopWidth: 1 },
   modalHandle: { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: '#888', opacity: 0.4, marginBottom: 8 },

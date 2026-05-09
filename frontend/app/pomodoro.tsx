@@ -10,6 +10,7 @@ import { Input } from '../src/components/Input';
 import { Button } from '../src/components/Button';
 import { api } from '../src/lib/api';
 import { spacing, radius } from '../src/theme/colors';
+import { requestPermissions, scheduleInMinutes } from '../src/lib/notifications';
 
 const PRESETS = [15, 25, 45, 60];
 
@@ -129,7 +130,21 @@ export default function PomodoroScreen() {
             <RotateCcw size={20} color={theme.textMain} />
           </TouchableOpacity>
           <View style={{ width: 16 }} />
-          <TouchableOpacity onPress={() => setRunning(r => !r)} style={[styles.bigBtn, { backgroundColor: theme.primary }]} testID="play-pause">
+          <TouchableOpacity
+            onPress={async () => {
+              const next = !running;
+              if (next) {
+                // schedule a "session done" reminder for the remaining seconds
+                const ok = await requestPermissions();
+                if (ok) {
+                  await scheduleInMinutes('Focus session done', 'Great work — take a short break.', Math.max(1, Math.ceil(secondsLeft / 60)));
+                }
+              }
+              setRunning(next);
+            }}
+            style={[styles.bigBtn, { backgroundColor: theme.primary }]}
+            testID="play-pause"
+          >
             {running ? <Pause size={28} color="#FFF" /> : <Play size={28} color="#FFF" />}
           </TouchableOpacity>
         </View>
